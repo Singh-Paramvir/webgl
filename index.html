@@ -75,7 +75,7 @@
       // happening inside the engine, and you would instead like to size up
       // the canvas DOM size and WebGL render target sizes yourself.
       // config.matchWebGLToCanvasSize = false;
-
+     var instance = null;
       function checkInternet() {
             fetch('https://minotsans.co.uk/testconnect', { method: 'HEAD', cache: 'no-cache' })
                 .then(() => {
@@ -117,6 +117,7 @@
         createUnityInstance(canvas, config, (progress) => {
           progressBarFull.style.width = 100 * progress + "%";
               }).then((unityInstance) => {
+            instance = unityInstance;
                 loadingBar.style.display = "none";
                 fullscreenButton.onclick = () => {
                   unityInstance.SetFullscreen(1);
