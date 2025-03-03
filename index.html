@@ -10,19 +10,17 @@
   <body>
     <div id="unity-container" class="unity-desktop">
       <canvas id="unity-canvas" width=1080 height=1920 tabindex="-1"></canvas>
-      <div id="unity-loading-bar">
-        </div>
-      </div>
-      <div id="unity-warning"> </div>
-      <div id="unity-footer">
-      </div>
+      <div id="unity-loading-bar"></div>
     </div>
-    <script>
+    <div id="unity-warning"></div>
+    <div id="unity-footer"></div>
 
+    <script>
       var container = document.querySelector("#unity-container");
       var canvas = document.querySelector("#unity-canvas");
       var loadingBar = document.querySelector("#unity-loading-bar");
       var warningBanner = document.querySelector("#unity-warning");
+      var instance = null;
 
       function unityShowBanner(msg, type) {
         function updateBannerVisibility() {
@@ -31,10 +29,10 @@
         var div = document.createElement('div');
         div.innerHTML = msg;
         warningBanner.appendChild(div);
-        if (type == 'error') div.style = 'background: red; padding: 10px;';
+        if (type === 'error') div.style = 'background: red; padding: 10px;';
         else {
-          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
-          setTimeout(function() {
+          if (type === 'warning') div.style = 'background: yellow; padding: 10px;';
+          setTimeout(() => {
             warningBanner.removeChild(div);
             updateBannerVisibility();
           }, 5000);
@@ -43,7 +41,6 @@
       }
 
       var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/Webgl.loader.js";
       var config = {
         dataUrl: buildUrl + "/Webgl.data.unityweb",
         frameworkUrl: buildUrl + "/Webgl.framework.js.unityweb",
@@ -55,32 +52,43 @@
         showBanner: unityShowBanner,
       };
 
-      var instance = null;
       function checkInternet() {
-            fetch('https://minotsans.co.uk/testconnect', { method: 'HEAD', cache: 'no-cache' })
-                .then(() => {
-                    instance.SendMessage('NoInternetHandler', 'OnInternetCheck', 'true');
-                })
-                .catch(() => {
-                    instance.SendMessage('NoInternetHandler', 'OnInternetCheck', 'false');
-                });
-        }
+        fetch('https://minotsans.co.uk/testconnect', { method: 'HEAD', cache: 'no-cache' })
+          .then(() => {
+            if (instance) instance.SendMessage('NoInternetHandler', 'OnInternetCheck', 'true');
+          })
+          .catch(() => {
+            if (instance) instance.SendMessage('NoInternetHandler', 'OnInternetCheck', 'false');
+          });
+      }
 
+      
+  window.handleAppPause = function (isPaused) {
+        console.log("handleAppPause called with status: ", isPaused);
+        if (instance) {
+          instance.SendMessage("GameManager", "HandleAppPause", isPaused.toString());
+          console.log("Sent message to Unity: ", isPaused);
+        } else {
+          console.warn("Unity instance is not initialized yet!");
+        }
+      };
+
+      // Handle app minimize & restore
       document.addEventListener("visibilitychange", function () {
-    if (document.hidden) {
-        console.log("App minimized - Sending pause message to Unity");
-        instance.SendMessage("GameManager", "HandleAppPause", "true");
-    } else {
-        console.log("App restored - Sending resume message to Unity");
-        instance.SendMessage("GameManager", "HandleAppPause", "false");
-    }
-});
+        if (document.hidden) {
+          console.log("App minimized - Sending pause message to Unity");
+          window.handleAppPause(true);
+        } else {
+          console.log("App restored - Sending resume message to Unity");
+          window.handleAppPause(false);
+        }
+      });
 
       if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
         var meta = document.createElement('meta');
         meta.name = 'viewport';
         meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-        document.getElementsByTagName('head')[0].appendChild(meta);
+        document.head.appendChild(meta);
         container.className = "unity-mobile";
         canvas.className = "unity-mobile";
       } else {
@@ -88,11 +96,11 @@
         canvas.style.height = "1920px";
       }
 
-     canvas.style.background = "url('" + "TemplateData" + "/gametimerpanelbg.png') center / cover";
+      canvas.style.background = "url('" + "TemplateData" + "/gametimerpanelbg.png') center / cover";
       loadingBar.style.display = "block";
 
       var script = document.createElement("script");
-      script.src = loaderUrl;
+      script.src = buildUrl + "/Webgl.loader.js";
       script.onload = () => {
         createUnityInstance(canvas, config).then((unityInstance) => {
           instance = unityInstance;
