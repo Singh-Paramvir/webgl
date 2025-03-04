@@ -22,6 +22,14 @@
       var warningBanner = document.querySelector("#unity-warning");
       var instance = null;
 
+      window.handleAppPause = function (isPaused) {
+      if (typeof instance !== "undefined" && instance != null) {
+          instance.SendMessage("GameManager", "HandleAppPause", isPaused ? "true" : "false");
+      } else {
+          console.log("Unity instance not ready to receive messages.");
+      }
+  };
+
       function unityShowBanner(msg, type) {
         function updateBannerVisibility() {
           warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
